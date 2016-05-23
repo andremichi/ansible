@@ -18,6 +18,7 @@ ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -vv sampleapp.yml --extra-vars 
 It will create a dev.mycompany.com internal domain on route53.
 
 After the playbook finishes look at your AWS Console and find the public IP of the weblayer instance. To test with everything is working run the command:
-# curl -XPOST WEBLAYER_PUBLIC_IP_ADDRESS/app
+
+curl -XPOST WEBLAYER_PUBLIC_IP_ADDRESS/app
 
 It should return a [OK] message. If not, something went wrong with the setup. 
