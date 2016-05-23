@@ -1,0 +1,8 @@
+---
+vpc_id: 'vpc-ef5c858a'
+region: 'us-east-1'
+private_network: '172.30.0.0/16'
+subnets_ids:
+  subnet1: 'subnet-fb847d8c'
+  subnet2: 'subnet-ec3c27aa'
+  subnet3: 'subnet-d8edd6f0'

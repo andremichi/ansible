@@ -1,0 +1,104 @@
+---
+- name: Create Security Group
+  ec2_group:
+    name: "{{ app_name }}-{{ app_env }}-sg"
+    description: "Security Group for weblayer {{ app_env }}"
+    vpc_id: "{{ vpc_id }}"
+    region: "{{ region }}"
+    rules:
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        cidr_ip: 0.0.0.0/0
+  register: security_group_weblayer
+
+- name: Tagging Security Group
+  ec2_tag:
+    region: "{{ region }}"
+    resource: "{{ security_group_weblayer.group_id }}"
+    tags:
+      Name: "{{ tags_weblayer.Name }}"
+      environment: "{{ app_env }}"
+
+- name: "Create weblayer Node instance"
+  ec2:
+    region: "{{ region }}"
+    instance_type: "{{ instance_type }}"
+    image: "{{ image_id }}"
+    key_name: "{{ key_name }}"
+    group_id: "{{ security_group_weblayer.group_id }}"
+    vpc_subnet_id: "{{ subnets_ids.subnet1 }}"
+    exact_count: 1
+    count_tag:
+      Name: "{{ tags_weblayer.Name }}"
+    instance_tags:
+      Name: "{{ tags_weblayer.Name }}"
+      environment: "{{ app_env }}"
+    assign_public_ip: yes
+    user_data: "{{ lookup('template', './templates/user_data/launcher.sh.j2') }}"
+    wait: yes
+    ebs_optimized: "{{ ebs_optimized | default('false') }}"
+    volumes:
+      - device_name: /dev/sda1
+        volume_size: "{{ volume_size | default('20') }}"
+        delete_on_termination: true
+  register: weblayer_instance
+
+- name: Get the attached volumes of the instance
+  ec2_vol:
+    region: "{{ region }}"
+    instance: "{{ weblayer_instance.tagged_instances[0].id }}"
+    state: list
+  register: vols
+
+- name: Tag the attached volume
+  ec2_tag:
+    region: "{{ region }}"
+    resource: "{{ vols.volumes[0].id }}"
+    tags:
+      Name: "{{ tags_weblayer.Name }}"
+      environment: "{{ app_env }}"
+  register: vol_tag
+
+- name: Setup instance auto-recovery
+  ec2_metric_alarm:
+    alarm_actions: [
+      "arn:aws:automate:{{ region }}:ec2:recover"
+    ]
+    metric: "StatusCheckFailed_System"
+    evaluation_periods: 2
+    period: 60
+    name: "Instance {{ weblayer_instance.tagged_instances.0.id }} AutoRecovery"
+    state: present
+    statistic: "Minimum"
+    dimensions: {
+      'InstanceId':"{{ weblayer_instance.tagged_instances.0.id }}"
+    }
+    description: 'Recover EC2 instance when health checks fail'
+    comparison: ">"
+    insufficient_data_actions: []
+    region: "{{ region }}"
+    threshold: 0.0
+    namespace: "AWS/EC2"
+    ok_actions: []
+
+- name: EC2 Remote Facts
+  ec2_remote_facts:
+    region: "{{ region }}"
+    filters:
+      instance-id: "{{ weblayer_instance.tagged_instances.0.id }}"
+  register: facts_ec2
+
+- name: Add instance created to a group
+  add_host: name="{{ weblayer_instance.tagged_instances.0.public_ip }}" groups=launched_weblayer
+
+- name: Wait for ssh to come up
+  local_action: wait_for host="{{ weblayer_instance.tagged_instances.0.public_ip }}" port=22 timeout=320 state=started
+
+- pause: seconds=90
+  when: deploy | match("false")
+

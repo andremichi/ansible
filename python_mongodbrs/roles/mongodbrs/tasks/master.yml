@@ -1,0 +1,12 @@
+---
+  - name: Ensure Mongod is running and enabled on master
+    service: name="mongod" state="started" enabled=yes
+
+  - name: Copy ReplicaSet Configuration File
+    template: src="templates/mongodbrs/rs_init.js.j2" dest="/var/lib/mongodb/rs_init.js"
+
+  - name: Configure Replicaset
+    shell: "mongo < /var/lib/mongodb/rs_init.js > /var/lib/mongodb/add_rs.log"
+    args:
+      creates: /var/lib/mongodb/add_rs.log
+    ignore_errors: true

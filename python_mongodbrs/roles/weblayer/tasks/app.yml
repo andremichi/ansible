@@ -1,0 +1,39 @@
+---
+  - name: Disabling selinux
+    selinux: state=disabled 
+
+  - name: Install Epel Repo
+    yum: name="epel-release" state="latest"
+
+  - name: Install Nginx Web Server
+    yum: name="nginx" state="latest"
+
+  - name: Enable Nginx
+    service: name="nginx" enabled=yes state="started"
+
+  - name: Install App dependecies
+    yum: name="{{ item }}" state="latest"
+    with_items:
+      - python-flask
+      - python-pymongo
+      - supervisor
+
+  - name: Copy Nginx default config file
+    template: src="templates/nginx/nginx.conf" dest="/etc/nginx/nginx.conf"
+
+  - name: Copy Nginx Application config file
+    template: src="templates/nginx/newapp.conf" dest="/etc/nginx/conf.d/newapp.conf"
+
+  - name: Copy supervisord configure file
+    template: src="templates/app/newapp.ini" dest="/etc/supervisord.d/newapp.ini"
+
+  - name: Install Application
+    template: src="application/newapp.py" dest="/opt/newapp.py"
+    notify:
+      - restart supervisord
+
+  - name: Start SupervisorD to ensure application is Running
+    service: name="supervisord" state="started" enabled=yes
+
+  - name: Restart Nginx
+    service: name="nginx" state="restarted"

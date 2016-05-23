@@ -1,0 +1,38 @@
+var cfg = {
+   "_id" : "{{ replicaset_name }}",
+   "version" : 1,
+   "members" : [
+      {
+         "_id" : 1,
+        "host" : "{{ rs_member1 }}",
+        "priority" : 2
+      }
+   ]
+}
+rs.initiate(cfg)
+
+st = rs.status().ok
+
+while ( st == 0 ) {
+    st = rs.status().ok
+}
+
+st0 = rs.status().members[0].stateStr
+
+while (st0 != "PRIMARY") {
+    st0 = rs.status().members[0].stateStr
+}
+
+rs.add("{{ rs_member2 }}")
+rs.add("{{ rs_member3 }}")
+
+rs.status()
+
+use admin
+db.createUser(
+    {
+      user: "{{ mongodb_username }}",
+      pwd: "{{ mongodb_password }}",
+      roles: [ "root" ]
+    }
+)

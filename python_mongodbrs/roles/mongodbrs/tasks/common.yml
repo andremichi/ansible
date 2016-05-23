@@ -1,0 +1,21 @@
+---
+  - name: Disabling selinux
+    selinux: state=disabled
+
+  - name: Install epel release
+    yum: name="epel-release" state="latest"
+
+  - name: Install MongoDB 2.6 Packages
+    yum: name="{{ item}}" state="latest"
+    with_items:
+      - mongodb
+      - mongodb-server
+
+  - name: Copy MongoDB Configuration File
+    template: src="templates/mongodbrs/mongodb.conf.j2" dest="/etc/mongod.conf"
+
+  - name: Copy MongoDB Keyfile
+    template: src="templates/mongodbrs/keyfile" dest="/var/lib/mongodb/keyfile" mode="0600" owner="mongodb" group="mongodb"
+
+  - name: Ensure MongoDB service is running and enabled at boot
+    service: name="mongod" state="started" enabled=yes

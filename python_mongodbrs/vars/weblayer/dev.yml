@@ -1,0 +1,10 @@
+---
+instance_type: 't2.micro' # Select a instance type
+key_name: 'xxxxxxxx' # Ensure that your key pair exists
+app_name: 'sampleapp' # Simple name for your app
+tags_weblayer:
+  Name: weblayer # Just to identify your instance
+  environment: development # Not needed at all
+image_id: 'yourAMIID' # Should be a CentOS7 AMI ID
+mongodb_username: 'user' # Should be the same as vars/mongodbrs/dev.yml
+mongodb_password: 'xxxxxxxxx' # Should be the same as vars/mongodbrs/dev.yml

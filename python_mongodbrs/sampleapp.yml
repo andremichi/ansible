@@ -1,0 +1,34 @@
+---
+- hosts: localhost
+  gather_facts: no
+  vars_files:
+    - "vars/weblayer/{{ app_env }}.yml"
+    - "vars/mongodbrs/{{ app_env }}.yml"
+  roles:
+    -  mongodbrs
+    -  weblayer
+
+- hosts: launched_slaves
+  vars_files:
+    - "vars/mongodbrs/{{ app_env }}.yml"
+  remote_user: centos
+  become: yes
+  tasks:
+    - include: roles/mongodbrs/tasks/common.yml
+
+- hosts: launched_master
+  vars_files:
+    - "vars/mongodbrs/{{ app_env }}.yml"
+  remote_user: centos
+  become: yes
+  tasks:
+    - include: roles/mongodbrs/tasks/common.yml
+    - include: roles/mongodbrs/tasks/master.yml
+
+- hosts: launched_weblayer
+  vars_files:
+    - "vars/weblayer/{{ app_env }}.yml"
+  remote_user: centos
+  become: yes
+  tasks:
+    - include: roles/weblayer/tasks/app.yml

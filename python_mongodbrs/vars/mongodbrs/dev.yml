@@ -1,0 +1,17 @@
+---
+mongodb_instance_type: 't2.micro' # Select a instance type
+tags_mongodb:
+  Name: mongodb # Just to identify the instances
+  environment: "{{ app_env }}" # Not needed at all
+key_name: 'xxxxxxxx' # Ensure that your key pair exists
+app_name: 'sampleapp' # Just to identify your instance
+image_id: 'yourAMIID' # Should be a CentOS7 AMI ID
+mongodb_username: 'user' # Should be the same as vars/weblayer/dev.yml
+mongodb_password: 'xxxxxxxxx' # Should be the same as vars/weblayer/dev.yml
+
+# The following addresses will be used on Route53
+# In this example will create a instance named mongodb-sampleapp-dev-memberX.dev.mycompany.com
+rs_member1: "mongodb-{{ app_name }}-{{ app_env }}-member1.{{ app_env }}.{{ domain | default('mycompany.com') }}"
+rs_member2: "mongodb-{{ app_name }}-{{ app_env }}-member2.{{ app_env }}.{{ domain | default('mycompany.com') }}"
+rs_member3: "mongodb-{{ app_name }}-{{ app_env }}-member3.{{ app_env }}.{{ domain | default('mycompany.com') }}"
+replicaset_name: "rs0" # The name of the replicaset
